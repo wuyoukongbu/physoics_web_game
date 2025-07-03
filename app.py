@@ -4,8 +4,6 @@ import os
 import json
 from werkzeug.utils import secure_filename
 import shutil
-from bs4 import BeautifulSoup
-import requests
 import time
 import re
 
@@ -130,123 +128,6 @@ def upload_game():
     games.append(game)
     save_games(games)
     flash('上传成功！')
-    return redirect(url_for('admin'))
-
-def crawl_simulation(url, save_dir):
-    # 简化版爬虫，只下载主页面和所有资源
-    visited = set()
-    RESOURCE_EXTS = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.gif', '.ico', '.json', '.html', '.htm', '.webp']
-    def safe_filename(url):
-        from urllib.parse import urlparse
-        path = urlparse(url).path.lstrip('/')
-        return os.path.join(save_dir, path)
-    def is_resource(url):
-        return any(url.lower().endswith(ext) for ext in RESOURCE_EXTS)
-    def download_file(url):
-        local_path = safe_filename(url)
-        if os.path.exists(local_path):
-            return local_path
-        os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        try:
-            resp = requests.get(url, timeout=10)
-            resp.raise_for_status()
-            with open(local_path, 'wb') as f:
-                f.write(resp.content)
-            return local_path
-        except Exception as e:
-            print(f'下载失败: {url}，原因: {e}')
-            return None
-    def crawl(url):
-        if url in visited:
-            return
-        visited.add(url)
-        local_path = download_file(url)
-        if not local_path or not (url.endswith('.html') or url.endswith('.htm')):
-            return
-        with open(local_path, 'r', encoding="utf-8", errors='ignore') as f:
-            soup = BeautifulSoup(f, 'html.parser')
-        tags_attrs = [
-            ('link', 'href'),
-            ('script', 'src'),
-            ('img', 'src'),
-            ('iframe', 'src'),
-            ('source', 'src'),
-            ('audio', 'src'),
-            ('video', 'src'),
-            ('a', 'href'),
-        ]
-        for tag, attr in tags_attrs:
-            for node in soup.find_all(tag):
-                src = node.get(attr)
-                if not src:
-                    continue
-                from urllib.parse import urljoin
-                abs_url = urljoin(url, src)
-                if is_resource(abs_url) or abs_url.endswith('.html') or abs_url.endswith('.htm'):
-                    crawl(abs_url)
-    crawl(url)
-
-def fix_html_paths(html_file):
-    from bs4 import BeautifulSoup
-    with open(html_file, 'r', encoding='utf-8', errors='ignore') as f:
-        soup = BeautifulSoup(f, 'html.parser')
-    tags_attrs = [
-        ('link', 'href'),
-        ('script', 'src'),
-        ('img', 'src'),
-        ('iframe', 'src'),
-        ('source', 'src'),
-        ('audio', 'src'),
-        ('video', 'src'),
-        ('a', 'href'),
-    ]
-    for tag, attr in tags_attrs:
-        for node in soup.find_all(tag):
-            src = node.get(attr)
-            if not src:
-                continue
-            # 修正以 /、icons/、images/ 开头的路径
-            if src.startswith('/'):
-                node[attr] = '.' + src
-            elif src.startswith('icons/') or src.startswith('images/'):
-                node[attr] = './' + src
-    with open(html_file, 'w', encoding='utf-8') as f:
-        f.write(str(soup))
-
-@app.route('/admin/crawl', methods=['POST'])
-@login_required
-def admin_crawl():
-    url = request.form['url']
-    name = request.form['name']
-    desc = request.form['desc']
-    thumbnail = request.files['thumbnail']
-    # 生成保存目录
-    folder_name = f"game_{int(time.time())}"
-    save_dir = os.path.join('static', 'uploads', 'html', folder_name)
-    os.makedirs(save_dir, exist_ok=True)
-    # 保存缩略图
-    thumb_filename = secure_filename(thumbnail.filename)
-    thumb_path = os.path.join('static', 'uploads', 'images', thumb_filename)
-    thumbnail.save(thumb_path)
-    # 爬取资源
-    crawl_simulation(url, save_dir)
-    # 主入口HTML路径
-    html_path = os.path.join('/static/uploads/html', folder_name, 'simulation.html')
-    # 自动修正 simulation.html 资源路径
-    fix_html_paths(os.path.join(save_dir, 'simulation.html'))
-    # 生成新游戏ID
-    games = load_games()
-    new_id = (max([g['id'] for g in games]) + 1) if games else 1
-    game = {
-        'id': new_id,
-        'name': name,
-        'desc': desc,
-        'thumbnail': f'/static/uploads/images/{thumb_filename}',
-        'html_path': html_path
-    }
-    games.append(game)
-    save_games(games)
-    flash('爬取并集成成功！')
     return redirect(url_for('admin'))
 
 @app.route('/admin/delete/<int:game_id>', methods=['POST'])
