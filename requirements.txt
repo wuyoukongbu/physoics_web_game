@@ -1,4 +1,6 @@
 Flask==2.3.2
 Flask-Login>=0.6.3
 Werkzeug>=2.3.3
-zope.event 
+zope.event>=4.6
+zope.interface>=6.0
+gevent>=24.2.1 
