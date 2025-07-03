@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "name": "点电荷电场线与等势面仿真",
+    "desc": "通过动画，生动形象地展示等势面与电场线的特点",
+    "thumbnail": "/static/uploads/images/2025-07-03_21.12.03.png",
+    "html_path": "/static/uploads/html/2.51.html"
+  }
+]

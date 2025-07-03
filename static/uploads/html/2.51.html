@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点电荷电场线交互式演示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #00c6ff, #0072ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #e0e0ff;
+            max-width: 800px;
+            margin: 0 auto 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            max-width: 1300px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .simulation-container {
+            flex: 1;
+            min-width: 600px;
+            background: rgba(10, 15, 30, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 2px solid rgba(0, 200, 255, 0.3);
+            position: relative;
+        }
+
+        .canvas-header {
+            padding: 15px 20px;
+            background: rgba(30, 40, 70, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(100, 150, 255, 0.2);
+        }
+
+        .canvas-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #64b5f6;
+        }
+
+        .canvas-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        canvas {
+            display: block;
+            background: rgba(5, 10, 20, 0.8);
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            max-width: 300px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .instructions i {
+            margin-right: 8px;
+            color: #00c6ff;
+        }
+
+        .control-panel {
+            width: 350px;
+            background: rgba(30, 40, 70, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(0, 200, 255, 0.3);
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #64b5f6;
+            text-align: center;
+            border-bottom: 2px solid #0072ff;
+            padding-bottom: 10px;
+        }
+
+        .charge-controls {
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #90caf9;
+            font-weight: 500;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: none;
+            background: #1e3a8a;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select {
+            background-image: linear-gradient(45deg, transparent 50%, #64b5f6 50%),
+                linear-gradient(135deg, #64b5f6 50%, transparent 50%);
+            background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
+            appearance: none;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            font-weight: bold;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button.toggle-btn {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+        }
+
+        button.toggle-btn.active {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+        }
+
+        button i {
+            margin-right: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .test-charge-controls {
+            background: rgba(20, 30, 60, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 25px;
+        }
+
+        .physics-info {
+            background: rgba(20, 30, 60, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 25px;
+        }
+
+        .physics-info h3 {
+            color: #64b5f6;
+            margin-bottom: 10px;
+        }
+
+        .physics-info p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .positive { background: linear-gradient(135deg, #ff5252, #d32f2f); }
+        .negative { background: linear-gradient(135deg, #64b5f6, #1976d2); }
+        .test { background: linear-gradient(135deg, #66bb6a, #2e7d32); }
+        .force { background: linear-gradient(135deg, #ffeb3b, #fbc02d); }
+        .equipotential { background: linear-gradient(135deg, #ffffff, #e0e0e0); }
+        .purple-line { background: linear-gradient(135deg, #e0b0ff, #8A2BE2); }
+
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 1100px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .control-panel {
+                width: 100%;
+                max-width: 600px;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .simulation-container {
+                min-width: unset;
+                width: 100%;
+            }
+
+            canvas {
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-bolt"></i> 点电荷电场线交互式演示</h1>
+        <p class="subtitle">此动画展示了点电荷周围电场线的分布情况。电场线表示电场的方向，密度表示电场的强度。您可以通过控制面板调整电荷配置，并添加试探电荷观察电场力方向。</p>
+    </div>
+
+    <div class="container">
+        <div class="simulation-container">
+            <div class="canvas-header">
+                <div class="canvas-title">电场模拟视图</div>
+                <div class="canvas-controls">
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="color-box positive"></div>
+                            <span>正电荷</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="color-box negative"></div>
+                            <span>负电荷</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="color-box test"></div>
+                            <span>试探电荷</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="color-box force"></div>
+                            <span>电场力</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="color-box equipotential"></div>
+                            <span>等势线</span>
+                        </div>
+                         <div class="legend-item">
+                            <div class="color-box purple-line"></div>
+                            <span>偶极子连接线</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <canvas id="electricFieldCanvas" width="800" height="600"></canvas>
+            <div class="instructions">
+                <ul>
+                    <li><i class="fas fa-mouse-pointer"></i> 点击画布添加试探电荷</li>
+                    <li><i class="fas fa-trash-alt"></i> 右键点击试探电荷可删除</li>
+                    <li><i class="fas fa-exchange-alt"></i> 拖动试探电荷可改变位置</li>
+                    <li><i class="fas fa-wave-square"></i> 使用控制面板切换等势线</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <h2 class="panel-title"><i class="fas fa-sliders-h"></i> 控制面板</h2>
+
+            <div class="charge-controls">
+                <h3><i class="fas fa-charging-station"></i> 电荷配置</h3>
+
+                <div class="control-group">
+                    <label class="control-label">电荷类型配置</label>
+                    <select id="chargeConfig">
+                        <option value="singlePositive">单个正电荷</option>
+                        <option value="singleNegative">单个负电荷</option>
+                        <option value="positivePair">两个正电荷</option>
+                        <option value="negativePair">两个负电荷</option>
+                        <option value="dipole" selected>电偶极子（正负电荷对）</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">电场线密度</label>
+                    <select id="fieldLineDensity">
+                        <option value="low">低密度 (12条/电荷)</option>
+                        <option value="medium" selected>中等密度 (24条/电荷)</option>
+                        <option value="high">高密度 (36条/电荷)</option>
+                    </select>
+                </div>
+
+                <button id="resetBtn">
+                    <i class="fas fa-sync-alt"></i> 重置模拟场景
+                </button>
+            </div>
+
+            <div class="test-charge-controls">
+                <h3><i class="fas fa-plus-circle"></i> 试探电荷控制</h3>
+
+                <div class="control-group">
+                    <label class="control-label">试探电荷电量</label>
+                    <select id="testChargeCharge">
+                        <option value="positive">正电荷 (+1)</option>
+                        <option value="negative">负电荷 (-1)</option>
+                    </select>
+                </div>
+
+                <button id="addTestChargeBtn">
+                    <i class="fas fa-plus"></i> 添加试探电荷
+                </button>
+
+                <button id="removeAllTestChargesBtn">
+                    <i class="fas fa-trash-alt"></i> 删除所有试探电荷
+                </button>
+            </div>
+
+            <div class="physics-info">
+                <h3><i class="fas fa-atom"></i> 物理原理</h3>
+                <p><strong>电场线：</strong> 从正电荷发出，终止于负电荷。电场线上每一点的切线方向表示该点电场方向。</p>
+                <p><strong>等势线：：</strong> 电势相等的点连成的线，与电场线垂直，白色虚线表示。</p>
+                <p><strong>电场强度：</strong> E = kQ/r²，其中k为静电力常数，Q为电荷量，r为距离。</p>
+                <p><strong>电场力：</strong> F = qE，其中q为试探电荷电量，E为电场强度。</p>
+            </div>
+
+            <button id="toggleEquipotentialBtn" class="toggle-btn">
+                <i class="fas fa-wave-square"></i> 显示等势线
+            </button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>点电荷电场线交互式演示 | 物理教学工具 | © 2023</p>
+    </div>
+
+    <script>
+        // 获取Canvas和上下文
+        const canvas = document.getElementById('electricFieldCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 画布尺寸
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // 电荷配置
+        let charges = [];
+        let fieldLines = [];
+        let testCharges = [];
+        let animationId = null;
+        let selectedTestCharge = null;
+        let dragOffset = { x: 0, y: 0 };
+        let showEquipotential = false;
+        const k = 100000; // 静电力常数
+
+        // 初始化电荷配置
+        function initializeCharges(config) {
+            charges = [];
+
+            switch(config) {
+                case 'singlePositive':
+                    charges.push({ x: width/2, y: height/2, q: 1.0 });
+                    break;
+
+                case 'singleNegative':
+                    charges.push({ x: width/2, y: height/2, q: -1.0 });
+                    break;
+
+                case 'positivePair':
+                    charges.push({ x: width/3, y: height/2, q: 1.0 });
+                    charges.push({ x: 2*width/3, y: height/2, q: 1.0 });
+                    break;
+
+                case 'negativePair':
+                    charges.push({ x: width/3, y: height/2, q: -1.0 });
+                    charges.push({ x: 2*width/3, y: height/2, q: -1.0 });
+                    break;
+
+                case 'dipole':
+                default:
+                    charges.push({ x: width/3, y: height/2, q: 1.0 }); // 正电荷
+                    charges.push({ x: 2*width/3, y: height/2, q: -1.0 }); // 负电荷
+                    break;
+            }
+        }
+
+        // 计算电势
+        function calculatePotential(x, y) {
+            let potential = 0;
+            for (let charge of charges) {
+                const dx = x - charge.x;
+                const dy = y - charge.y;
+                const r = Math.sqrt(dx*dx + dy*dy);
+
+                // 避免除以零
+                if (r < 1) continue;
+
+                potential += k * charge.q / r;
+            }
+            return potential;
+        }
+
+        // 计算电场
+        function calculateField(x, y) {
+            let ex = 0, ey = 0;
+
+            for (let charge of charges) {
+                const dx = x - charge.x;
+                const dy = y - charge.y;
+                const rSquared = dx*dx + dy*dy;
+
+                // 避免除以零
+                if (rSquared < 1) continue;
+
+                const r = Math.sqrt(rSquared);
+                const strength = k * charge.q / rSquared;
+
+                ex += strength * dx / r;
+                ey += strength * dy / r;
+            }
+
+            return { ex, ey };
+        }
+
+        // 创建电场线
+        function createFieldLines(density) {
+            fieldLines = [];
+            let numLines;
+
+            // 根据密度设置电场线数量
+            switch(density) {
+                case 'low': numLines = 12; break;
+                case 'high': numLines = 36; break;
+                case 'medium':
+                default: numLines = 24; break;
+            }
+
+            // 创建从正电荷出发的电场线（红色）
+            for (let charge of charges) {
+                if (charge.q > 0) {
+                    // 如果是两个正电荷的情况
+                    if (charges.length === 2 && charges[0].q > 0 && charges[1].q > 0) {
+                        // 计算两个电荷之间的角度
+                        const otherCharge = charges[0] === charge ? charges[1] : charges[0];
+                        const dx = otherCharge.x - charge.x;
+                        const dy = otherCharge.y - charge.y;
+                        const directAngle = Math.atan2(dy, dx);
+
+                        // 创建电场线时跳过直接指向另一个正电荷的角度
+                        for (let i = 0; i < numLines; i++) {
+                            const angle = (i / numLines) * 2 * Math.PI;
+                            // 跳过直接指向另一个正电荷的角度（±0.1弧度范围内）
+                            if (Math.abs(angle - directAngle) > 0.1 &&
+                                Math.abs(angle - directAngle + 2*Math.PI) > 0.1 &&
+                                Math.abs(angle - directAngle - 2*Math.PI) > 0.1) {
+                                const startX = charge.x + 20 * Math.cos(angle);
+                                const startY = charge.y + 20 * Math.sin(angle);
+
+                                fieldLines.push({
+                                    points: [{x: startX, y: startY}],
+                                    color: '#ff5252', // Red for positive charge lines
+                                    chargeType: 1 // Indicates originating from positive charge
+                                });
+                            }
+                        }
+                    } else {
+                        // 其他情况正常创建电场线
+                        for (let i = 0; i < numLines; i++) {
+                            const angle = (i / numLines) * 2 * Math.PI;
+                            const startX = charge.x + 20 * Math.cos(angle);
+                            const startY = charge.y + 20 * Math.sin(angle);
+
+                            fieldLines.push({
+                                points: [{x: startX, y: startY}],
+                                color: '#ff5252', // Red for positive charge lines
+                                chargeType: 1 // Indicates originating from positive charge
+                            });
+                        }
+                    }
+                }
+            }
+
+            // 为负电荷创建电场线：从电荷附近开始，并将其标记为需要反向追踪的线
+            for (let charge of charges) {
+                if (charge.q < 0) {
+                    for (let i = 0; i < numLines; i++) {
+                        const angle = (i / numLines) * 2 * Math.PI;
+                        const startX = charge.x + 20 * Math.cos(angle); // 从电荷附近开始
+                        const startY = charge.y + 20 * Math.sin(angle);
+
+                        fieldLines.push({
+                            points: [{ x: startX, y: startY }],
+                            color: '#64b5f6', // Blue for negative charge lines
+                            chargeType: -1 // 标记为负电荷线，追踪时将反向
+                        });
+                    }
+                }
+            }
+        }
+
+        // 新的等势线追踪函数：根据电场方向的垂线追踪
+        function drawEquipotentialByField(startX, startY, step = 3, maxSteps = 2000) {
+            let path = [{ x: startX, y: startY }];
+            let x = startX, y = startY;
+            for (let i = 0; i < maxSteps; i++) {
+                // 计算电场
+                let { ex, ey } = calculateField(x, y);
+                let mag = Math.sqrt(ex * ex + ey * ey);
+                if (mag < 1e-3) break; // 电场太弱，停止
+
+                // 取垂直方向
+                let dx = -ey / mag;
+                let dy = ex / mag;
+
+                // 前进一步
+                x += dx * step;
+                y += dy * step;
+
+                // 边界判断
+                if (x < 0 || x > width || y < 0 || y > height) break;
+
+                // 闭合判断
+                if (i > 30) {
+                    let dist = Math.sqrt((x - startX) ** 2 + (y - startY) ** 2);
+                    if (dist < step * 2) break;
+                }
+
+                path.push({ x, y });
+            }
+
+            // 绘制
+            if (path.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(path[0].x, path[0].y);
+                for (let p of path) ctx.lineTo(p.x, p.y);
+                ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        // 沿电场线追踪并按等电势步进画等势线
+        function drawEquipotentialAlongFieldLine(startX, startY, deltaV = 100, step = 3, maxSteps = 2000) {
+            let x = startX, y = startY;
+            let lastPotential = calculatePotential(x, y);
+            let { ex, ey } = calculateField(x, y);
+            // 判断电势递增还是递减
+            let probePotential = calculatePotential(x + ex, y + ey);
+            let sign = (probePotential < lastPotential) ? -1 : 1;
+            let nextTargetPotential = lastPotential + sign * deltaV;
+            let steps = 0;
+            while (x >= 0 && x <= width && y >= 0 && y <= height && steps < maxSteps) {
+                // 沿电场方向前进
+                let field = calculateField(x, y);
+                let mag = Math.sqrt(field.ex * field.ex + field.ey * field.ey);
+                if (mag < 1e-3) break;
+                x += field.ex / mag * step;
+                y += field.ey / mag * step;
+                let currentPotential = calculatePotential(x, y);
+                // 每到达一个等势步进点就画一条等势线
+                if (sign * (currentPotential - nextTargetPotential) >= 0) {
+                    drawEquipotentialByField(x, y);
+                    nextTargetPotential += sign * deltaV;
+                }
+                steps++;
+            }
+        }
+
+        // marching squares 算法绘制等势线
+        function marchingSquaresDrawContour(grid, level, color = 'rgba(255,255,255,0.7)') {
+            const rows = grid.length;
+            const cols = grid[0].length;
+            const dx = width / (cols - 1);
+            const dy = height / (rows - 1);
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            for (let y = 0; y < rows - 1; y++) {
+                for (let x = 0; x < cols - 1; x++) {
+                    // 取四个角的电势
+                    let tl = grid[y][x];
+                    let tr = grid[y][x + 1];
+                    let bl = grid[y + 1][x];
+                    let br = grid[y + 1][x + 1];
+                    // 计算格子的二进制编码
+                    let code = 0;
+                    if (tl > level) code |= 8;
+                    if (tr > level) code |= 4;
+                    if (br > level) code |= 2;
+                    if (bl > level) code |= 1;
+                    // marching squares 16种情况
+                    let lines = [];
+                    switch (code) {
+                        case 1:
+                        case 14:
+                            lines.push([interp(x, y + 1, bl, x, y, tl), interp(x + 1, y + 1, br, x, y + 1, bl)]);
+                            break;
+                        case 2:
+                        case 13:
+                            lines.push([interp(x + 1, y + 1, br, x + 1, y, tr), interp(x, y + 1, bl, x + 1, y + 1, br)]);
+                            break;
+                        case 3:
+                        case 12:
+                            lines.push([interp(x + 1, y + 1, br, x + 1, y, tr), interp(x, y + 1, bl, x, y, tl)]);
+                            break;
+                        case 4:
+                        case 11:
+                            lines.push([interp(x + 1, y, tr, x, y, tl), interp(x + 1, y + 1, br, x + 1, y, tr)]);
+                            break;
+                        case 5:
+                            lines.push([interp(x, y + 1, bl, x, y, tl), interp(x + 1, y, tr, x + 1, y + 1, br)]);
+                            break;
+                        case 6:
+                        case 9:
+                            lines.push([interp(x + 1, y, tr, x, y, tl), interp(x, y + 1, bl, x + 1, y + 1, br)]);
+                            break;
+                        case 7:
+                        case 8:
+                            lines.push([interp(x + 1, y, tr, x, y, tl), interp(x, y + 1, bl, x, y, tl)]);
+                            break;
+                        case 10:
+                            lines.push([interp(x + 1, y, tr, x, y, tl), interp(x + 1, y + 1, br, x + 1, y, tr)]);
+                            lines.push([interp(x, y + 1, bl, x, y, tl), interp(x + 1, y + 1, br, x + 1, y, tr)]);
+                            break;
+                        default:
+                            break;
+                    }
+                    // 画线
+                    for (let seg of lines) {
+                        ctx.beginPath();
+                        ctx.moveTo(seg[0][0] * dx, seg[0][1] * dy);
+                        ctx.lineTo(seg[1][0] * dx, seg[1][1] * dy);
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.setLineDash([]);
+            ctx.restore();
+            // 辅助函数：线性插值
+            function interp(x1, y1, v1, x2, y2, v2) {
+                let t = (level - v1) / (v2 - v1 + 1e-12);
+                return [x1 + (x2 - x1) * t, y1 + (y2 - y1) * t];
+            }
+        }
+
+        // marching squares 等势线主函数
+        function drawEquipotentialLines() {
+            if (charges.length === 0) return;
+            // 采样电势场
+            const gridW = 100, gridH = 100;
+            let grid = [];
+            for (let y = 0; y < gridH; y++) {
+                grid[y] = [];
+                for (let x = 0; x < gridW; x++) {
+                    let px = x * width / (gridW - 1);
+                    let py = y * height / (gridH - 1);
+                    grid[y][x] = calculatePotential(px, py);
+                }
+            }
+            // 设定等势线电势值
+            let levels = [];
+            // 自动分布等势线电势值（正负对称）
+            let maxV = 0, minV = 0;
+            for (let y = 0; y < gridH; y++) {
+                for (let x = 0; x < gridW; x++) {
+                    if (grid[y][x] > maxV) maxV = grid[y][x];
+                    if (grid[y][x] < minV) minV = grid[y][x];
+                }
+            }
+            let nLines = 200; // 等势线数量
+            for (let i = 1; i <= nLines; i++) {
+                levels.push((maxV * i) / nLines);
+                levels.push((minV * i) / nLines);
+            }
+            levels.push(0); // 加入零势线
+            // 画等势线
+            for (let v of levels) {
+                marchingSquaresDrawContour(grid, v);
+            }
+        }
+
+        // 更新电场线
+        function updateFieldLines() {
+            const stepSize = 4;
+            const maxSteps = 200;
+            const minDistance = 10; // Minimum distance to charge to stop tracing
+
+            for (let line of fieldLines) {
+                if (line.completed) continue;
+
+                const lastPoint = line.points[line.points.length - 1];
+
+                // 计算电场方向
+                const field = calculateField(lastPoint.x, lastPoint.y);
+                const magnitude = Math.sqrt(field.ex * field.ex + field.ey * field.ey);
+
+                // 如果电场太小，停止绘制
+                if (magnitude < 0.1) {
+                    line.completed = true;
+                    continue;
+                }
+
+                // 计算单位方向向量
+                const dx_field = field.ex / magnitude;
+                const dy_field = field.ey / magnitude;
+
+                // 根据电荷类型决定方向
+                // 如果是正电荷线 (chargeType = 1)，沿着电场方向追踪。
+                // 如果是负电荷线 (chargeType = -1)，逆着电场方向追踪，模拟电场线汇入负电荷。
+                let directionFactor = line.chargeType;
+
+                const newPoint = {
+                    x: lastPoint.x + stepSize * dx_field * directionFactor,
+                    y: lastPoint.y + stepSize * dy_field * directionFactor
+                };
+
+                // 检查是否超出边界
+                if (newPoint.x < 0 || newPoint.x > width || newPoint.y < 0 || newPoint.y > height) {
+                    line.completed = true;
+                    continue;
+                }
+
+                // 检查是否靠近任何电荷
+                let terminatedAtCharge = false;
+                for (let charge of charges) {
+                    const dist = Math.sqrt(
+                        Math.pow(newPoint.x - charge.x, 2) +
+                        Math.pow(newPoint.y - charge.y, 2)
+                    );
+
+                    if (dist < minDistance) {
+                        line.completed = true;
+                        terminatedAtCharge = true;
+
+                        // **偶极子特殊颜色逻辑:**
+                        // 如果当前是偶极子配置，并且这条线是从正电荷（红色）开始的，
+                        // 并且它终止在一个负电荷处，则将其颜色改为紫色。
+                        const currentConfig = document.getElementById('chargeConfig').value;
+                        if (currentConfig === 'dipole' && line.chargeType === 1 && charge.q < 0) {
+                            line.color = '#8A2BE2'; // 紫色
+                        }
+                        break; // 停止检查其他电荷
+                    }
+                }
+
+                // 添加新点，如果未终止
+                if (!terminatedAtCharge) {
+                    line.points.push(newPoint);
+
+                    // 检查最大步数
+                    if (line.points.length > maxSteps) {
+                        line.completed = true;
+                    }
+                }
+            }
+        }
+
+        // 绘制箭头头部
+        function drawArrowHead(x, y, angle, size, color) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.moveTo(0, 0);
+            // 绘制箭头的两个翼
+            ctx.lineTo(-size, -size / 2);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-size, size / 2);
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制网格背景
+        function drawGrid() {
+            const gridSize = 40;
+
+            ctx.strokeStyle = 'rgba(100, 150, 200, 0.1)';
+            ctx.lineWidth = 1;
+
+            // 垂直线
+            for (let x = 0; x < width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            // 水平线
+            for (let y = 0; y < height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+
+        // 绘制场景
+        function drawScene() {
+            // 清除画布
+            ctx.clearRect(0, 0, width, height);
+
+            // 绘制网格背景
+            drawGrid();
+
+            // 绘制电场线（带箭头）
+            for (let line of fieldLines) {
+                if (line.points.length < 2) continue;
+
+                ctx.beginPath();
+                ctx.moveTo(line.points[0].x, line.points[0].y);
+
+                // 绘制线条
+                for (let i = 1; i < line.points.length; i++) {
+                    ctx.lineTo(line.points[i].x, line.points[i].y);
+                }
+
+                ctx.strokeStyle = line.color;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // 绘制箭头
+                const arrowInterval = 25; // 箭头间隔
+                const arrowSize = 8;
+                for (let i = arrowInterval; i < line.points.length - 1; i += arrowInterval) {
+                    const p1 = line.points[i];
+                    const p2 = line.points[i + 1]; // Look slightly ahead for direction
+
+                    // Calculate direction
+                    const dx_arrow = p2.x - p1.x;
+                    const dy_arrow = p2.y - p1.y;
+                    let angle = Math.atan2(dy_arrow, dx_arrow);
+
+                    // For lines originating from negative charges (blue lines in our scheme),
+                    // the tracing goes *away* from the charge, but the physical field lines
+                    // point *towards* the negative charge. So we need to reverse the arrow direction.
+                    if (line.chargeType === -1) {
+                         angle += Math.PI; // Reverse direction
+                    }
+
+                    drawArrowHead(p1.x, p1.y, angle, arrowSize, line.color);
+                }
+            }
+
+
+            // 绘制等势线
+            if (showEquipotential) {
+                drawEquipotentialLines();
+            }
+
+            // 绘制电荷
+            for (let charge of charges) {
+                ctx.beginPath();
+                ctx.arc(charge.x, charge.y, 15, 0, Math.PI * 2);
+
+                if (charge.q > 0) {
+                    // 正电荷 - 红色
+                    const gradient = ctx.createRadialGradient(
+                        charge.x, charge.y, 5,
+                        charge.x, charge.y, 15
+                    );
+                    gradient.addColorStop(0, '#ff8a80');
+                    gradient.addColorStop(1, '#ff5252');
+                    ctx.fillStyle = gradient;
+
+                    // 绘制"+"号
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('+', charge.x, charge.y);
+                } else {
+                    // 负电荷 - 蓝色
+                    const gradient = ctx.createRadialGradient(
+                        charge.x, charge.y, 5,
+                        charge.x, charge.y, 15
+                    );
+                    gradient.addColorStop(0, '#90caf9');
+                    gradient.addColorStop(1, '#64b5f6');
+                    ctx.fillStyle = gradient;
+
+                    // 绘制"-"号
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 26px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('-', charge.x, charge.y);
+                }
+            }
+
+            // 绘制试探电荷和电场力
+            for (let testCharge of testCharges) {
+                // 绘制试探电荷
+                ctx.beginPath();
+                ctx.arc(testCharge.x, testCharge.y, 12, 0, Math.PI * 2);
+
+                const gradient = ctx.createRadialGradient(
+                    testCharge.x, testCharge.y, 5,
+                    testCharge.x, testCharge.y, 12
+                );
+
+                if (testCharge.q > 0) {
+                    gradient.addColorStop(0, '#a5d6a7');
+                    gradient.addColorStop(1, '#66bb6a');
+                } else {
+                    gradient.addColorStop(0, '#ef9a9a');
+                    gradient.addColorStop(1, '#ef5350');
+                }
+
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // 绘制电荷符号
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(testCharge.q > 0 ? '+' : '-', testCharge.x, testCharge.y);
+
+                // 计算并绘制电场力
+                const field = calculateField(testCharge.x, testCharge.y);
+                const forceScale = 80; // 缩放因子，使力可见
+
+                // 力 F = qE
+                let fx = testCharge.q * field.ex * forceScale;
+                let fy = testCharge.q * field.ey * forceScale;
+
+                // 限制力箭头长度，防止过长
+                const maxLength = 150;
+                const forceLength = Math.sqrt(fx * fx + fy * fy);
+                if (forceLength > 5) { // Only draw if force is significant
+                    if (forceLength > maxLength) {
+                        const scale = maxLength / forceLength;
+                        fx *= scale;
+                        fy *= scale;
+                    }
+                    drawArrowHead(testCharge.x + fx, testCharge.y + fy, Math.atan2(fy, fx), 10, '#ffeb3b');
+                    ctx.beginPath();
+                    ctx.moveTo(testCharge.x, testCharge.y);
+                    ctx.lineTo(testCharge.x + fx, testCharge.y + fy);
+                    ctx.strokeStyle = '#ffeb3b';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // 添加试探电荷
+        function addTestCharge(x, y, chargeType) {
+            testCharges.push({
+                x: x,
+                y: y,
+                q: chargeType === 'positive' ? 1.0 : -1.0,
+                id: Date.now() // 使用时间戳作为唯一ID
+            });
+        }
+
+        // 删除试探电荷
+        function removeTestCharge(id) {
+            testCharges = testCharges.filter(charge => charge.id !== id);
+        }
+
+        // 删除所有试探电荷
+        function removeAllTestCharges() {
+            testCharges = [];
+        }
+
+        // 动画循环
+        function animate() {
+            updateFieldLines();
+            drawScene();
+
+            // 检查是否所有电场线都已完成
+            const allCompleted = fieldLines.every(line => line.completed);
+
+            if (!allCompleted) {
+                animationId = requestAnimationFrame(animate);
+            } else {
+                // 完成后保持最终图像，不再重启动画，以避免闪烁
+                // 只有在用户更改设置时才重置
+                drawScene(); // 确保绘制最终状态
+            }
+        }
+
+        // 重置动画
+        function resetAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            const config = document.getElementById('chargeConfig').value;
+            const density = document.getElementById('fieldLineDensity').value;
+
+            initializeCharges(config);
+            createFieldLines(density);
+            animate();
+        }
+
+        // 事件监听
+        document.getElementById('chargeConfig').addEventListener('change', resetAnimation);
+        document.getElementById('fieldLineDensity').addEventListener('change', resetAnimation);
+        document.getElementById('resetBtn').addEventListener('click', resetAnimation);
+
+        // 添加试探电荷按钮
+        document.getElementById('addTestChargeBtn').addEventListener('click', () => {
+            const chargeType = document.getElementById('testChargeCharge').value;
+            // 在中心位置添加试探电荷
+            addTestCharge(width/2, height/2, chargeType);
+            drawScene(); // 立即重绘
+        });
+
+        // 删除所有试探电荷
+        document.getElementById('removeAllTestChargesBtn').addEventListener('click', () => {
+            removeAllTestCharges();
+            drawScene(); // 立即重绘
+        });
+
+        // 切换等势线显示
+        const toggleBtn = document.getElementById('toggleEquipotentialBtn');
+        toggleBtn.addEventListener('click', () => {
+            showEquipotential = !showEquipotential;
+            if (showEquipotential) {
+                toggleBtn.textContent = ' 隐藏等势线';
+                toggleBtn.classList.add('active');
+                toggleBtn.innerHTML = '<i class="fas fa-wave-square"></i> 隐藏等势线';
+            } else {
+                toggleBtn.textContent = ' 显示等势线';
+                toggleBtn.classList.remove('active');
+                toggleBtn.innerHTML = '<i class="fas fa-wave-square"></i> 显示等势线';
+            }
+            drawScene(); // 立即重绘
+        });
+
+        // 画布点击事件
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 检查是否点击在已有电荷上
+            let clickedOnCharge = false;
+
+            for (let charge of charges) {
+                const dx = x - charge.x;
+                const dy = y - charge.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 20) {
+                    clickedOnCharge = true;
+                    break;
+                }
+            }
+
+            if (!clickedOnCharge) {
+                const chargeType = document.getElementById('testChargeCharge').value;
+                addTestCharge(x, y, chargeType);
+                drawScene(); // 立即重绘
+            }
+        });
+
+        // 右键删除试探电荷
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 查找点击的试探电荷
+            for (let i = testCharges.length - 1; i >= 0; i--) {
+                const charge = testCharges[i];
+                const dx = x - charge.x;
+                const dy = y - charge.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 15) {
+                    removeTestCharge(charge.id);
+                    drawScene(); // 立即重绘
+                    break;
+                }
+            }
+        });
+
+        // 拖动试探电荷
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // 只响应左键
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 查找点击的试探电荷
+            for (let i = testCharges.length - 1; i >= 0; i--) {
+                const charge = testCharges[i];
+                const dx = x - charge.x;
+                const dy = y - charge.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 15) {
+                    selectedTestCharge = charge;
+                    dragOffset = { x: charge.x - x, y: charge.y - y };
+                    canvas.style.cursor = 'grabbing';
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (selectedTestCharge) {
+                const rect = canvas.getBoundingClientRect();
+                selectedTestCharge.x = e.clientX - rect.left + dragOffset.x;
+                selectedTestCharge.y = e.clientY - rect.top + dragOffset.y;
+
+                // 因为动画可能已停止，拖动时需要手动重绘
+                if (fieldLines.every(line => line.completed)) {
+                    drawScene();
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            selectedTestCharge = null;
+            canvas.style.cursor = 'default';
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            selectedTestCharge = null;
+            canvas.style.cursor = 'default';
+        });
+
+        // 初始化
+        window.addEventListener('load', resetAnimation);
+    </script>
+</body>
+</html>
