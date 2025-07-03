@@ -364,6 +364,17 @@
                     </select>
                 </div>
 
+                <div class="control-group">
+                    <label class="control-label">画布背景色</label>
+                    <select id="canvasBgColor">
+                        <option value="dark" selected>深色（默认）</option>
+                        <option value="light">浅色</option>
+                        <option value="white">纯白</option>
+                        <option value="black">纯黑</option>
+                        <option value="blue">蓝色</option>
+                    </select>
+                </div>
+
                 <button id="resetBtn">
                     <i class="fas fa-sync-alt"></i> 重置模拟场景
                 </button>
@@ -400,6 +411,10 @@
             <button id="toggleEquipotentialBtn" class="toggle-btn">
                 <i class="fas fa-wave-square"></i> 显示等势线
             </button>
+            <div class="control-group" style="margin-top: 10px;">
+                <label class="control-label" for="equipotentialColor">等势线颜色</label>
+                <input type="color" id="equipotentialColor" value="#ffffff" style="width: 50px; height: 30px; padding: 0; border: none; background: none;">
+            </div>
         </div>
     </div>
 
@@ -750,52 +765,39 @@
             }
             levels.push(0); // 加入零势线
             // 画等势线
+            const eqColor = document.getElementById('equipotentialColor')?.value || 'rgba(255,255,255,0.7)';
             for (let v of levels) {
-                marchingSquaresDrawContour(grid, v);
+                marchingSquaresDrawContour(grid, v, eqColor);
             }
         }
 
         // 更新电场线
         function updateFieldLines() {
-            const stepSize = 4;
+            const stepSize = 8; // 步长加大，画得更快
             const maxSteps = 200;
-            const minDistance = 10; // Minimum distance to charge to stop tracing
-
+            const minDistance = 10;
+            // 方案一：每一帧所有未完成的电场线都只增加一个点
             for (let line of fieldLines) {
                 if (line.completed) continue;
-
                 const lastPoint = line.points[line.points.length - 1];
-
-                // 计算电场方向
                 const field = calculateField(lastPoint.x, lastPoint.y);
                 const magnitude = Math.sqrt(field.ex * field.ex + field.ey * field.ey);
-
-                // 如果电场太小，停止绘制
                 if (magnitude < 0.1) {
                     line.completed = true;
                     continue;
                 }
-
-                // 计算单位方向向量
                 const dx_field = field.ex / magnitude;
                 const dy_field = field.ey / magnitude;
-
-                // 根据电荷类型决定方向
-                // 如果是正电荷线 (chargeType = 1)，沿着电场方向追踪。
-                // 如果是负电荷线 (chargeType = -1)，逆着电场方向追踪，模拟电场线汇入负电荷。
                 let directionFactor = line.chargeType;
-
                 const newPoint = {
                     x: lastPoint.x + stepSize * dx_field * directionFactor,
                     y: lastPoint.y + stepSize * dy_field * directionFactor
                 };
-
                 // 检查是否超出边界
                 if (newPoint.x < 0 || newPoint.x > width || newPoint.y < 0 || newPoint.y > height) {
                     line.completed = true;
                     continue;
                 }
-
                 // 检查是否靠近任何电荷
                 let terminatedAtCharge = false;
                 for (let charge of charges) {
@@ -803,27 +805,20 @@
                         Math.pow(newPoint.x - charge.x, 2) +
                         Math.pow(newPoint.y - charge.y, 2)
                     );
-
                     if (dist < minDistance) {
                         line.completed = true;
                         terminatedAtCharge = true;
-
-                        // **偶极子特殊颜色逻辑:**
-                        // 如果当前是偶极子配置，并且这条线是从正电荷（红色）开始的，
-                        // 并且它终止在一个负电荷处，则将其颜色改为紫色。
+                        // 偶极子特殊颜色逻辑
                         const currentConfig = document.getElementById('chargeConfig').value;
                         if (currentConfig === 'dipole' && line.chargeType === 1 && charge.q < 0) {
-                            line.color = '#8A2BE2'; // 紫色
+                            line.color = '#8A2BE2';
                         }
-                        break; // 停止检查其他电荷
+                        break;
                     }
                 }
-
-                // 添加新点，如果未终止
+                // 只增加一个点
                 if (!terminatedAtCharge) {
                     line.points.push(newPoint);
-
-                    // 检查最大步数
                     if (line.points.length > maxSteps) {
                         line.completed = true;
                     }
@@ -851,6 +846,21 @@
 
         // 绘制网格背景
         function drawGrid() {
+            // 获取选择的背景色
+            const bgSelect = document.getElementById('canvasBgColor');
+            let bg = 'rgba(5, 10, 20, 0.8)'; // 默认深色
+            if (bgSelect) {
+                switch(bgSelect.value) {
+                    case 'light': bg = '#e0e7ef'; break;
+                    case 'white': bg = '#fff'; break;
+                    case 'black': bg = '#000'; break;
+                    case 'blue': bg = '#e3f2fd'; break;
+                    default: bg = 'rgba(5, 10, 20, 0.8)';
+                }
+            }
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, width, height);
+
             const gridSize = 40;
 
             ctx.strokeStyle = 'rgba(100, 150, 200, 0.1)';
@@ -1200,6 +1210,12 @@
             selectedTestCharge = null;
             canvas.style.cursor = 'default';
         });
+
+        // 画布背景色切换
+        document.getElementById('canvasBgColor').addEventListener('change', drawScene);
+
+        // 等势线颜色切换
+        document.getElementById('equipotentialColor').addEventListener('input', drawScene);
 
         // 初始化
         window.addEventListener('load', resetAnimation);
