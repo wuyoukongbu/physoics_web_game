@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>滑稽旋转火柴人大炮</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    canvas {
+      background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+      display: block;
+      cursor: crosshair;
+      border: 3px solid #fff;
+      box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    }
+
+    .ui-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .control-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      gap: 15px;
+      pointer-events: auto;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-reset {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+      color: white;
+    }
+
+    .btn-reset:hover {
+      background: linear-gradient(45deg, #ee5a52, #ff6b6b);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+    }
+
+    .btn-clear {
+      background: linear-gradient(45deg, #4ecdc4, #44a08d);
+      color: white;
+    }
+
+    .btn-clear:hover {
+      background: linear-gradient(45deg, #44a08d, #4ecdc4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(78,205,196,0.4);
+    }
+
+    .info-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      pointer-events: auto;
+      min-width: 200px;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .info-label {
+      font-weight: bold;
+      color: #666;
+    }
+
+    .info-value {
+      color: #2c3e50;
+      font-weight: bold;
+    }
+
+    .power-indicator {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 25px;
+      padding: 15px 30px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      pointer-events: auto;
+    }
+
+    .power-bar {
+      width: 300px;
+      height: 30px;
+      background: #e0e0e0;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+      margin-top: 8px;
+      cursor: pointer;
+      border: 2px solid #ddd;
+    }
+
+    .power-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A, #CDDC39, #FFC107, #FF9800, #FF5722);
+      width: 50%;
+      transition: width 0.1s ease;
+      border-radius: 13px;
+      position: relative;
+    }
+
+    .power-slider {
+      position: absolute;
+      right: -15px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      background: #fff;
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      border: 3px solid #007bff;
+      transition: all 0.2s ease;
+    }
+
+    .power-slider:hover {
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .power-slider:active {
+      cursor: grabbing;
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    .power-label {
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+      font-size: 16px;
+    }
+
+    .instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      max-width: 250px;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .title {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: bold;
+      color: rgba(255,255,255,0.1);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
+    }
+
+    .bounce {
+      animation: bounce 0.6s ease;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div class="ui-container">
+    <div class="title">火柴人大炮</div>
+
+    <div class="control-panel">
+      <button id="resetBtn" class="btn btn-reset">🔄 重置</button>
+      <button id="clearBtn" class="btn btn-clear">🧹 清空轨迹</button>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-item">
+        <span class="info-label">火柴人数量:</span>
+        <span class="info-value" id="humanCount">0</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">发射角度:</span>
+        <span class="info-value" id="angleDisplay">0°</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">弹跳次数:</span>
+        <span class="info-value" id="bounceCount">0</span>
+      </div>
+    </div>
+
+    <div class="power-indicator">
+      <div class="power-label">发射力度 (<span id="powerValue">10</span>)</div>
+      <div class="power-bar" id="powerBar">
+        <div class="power-fill" id="powerFill">
+          <div class="power-slider" id="powerSlider"></div>
+        </div>
+      </div>
+    </div>
+
+<!--    <div class="instructions">-->
+<!--      <strong>🎮 操作说明:</strong><br>-->
+<!--      • 移动鼠标瞄准<br>-->
+<!--      • 滚轮调节力度<br>-->
+<!--      • 点击发射火柴人<br>-->
+<!--      • 火柴人会弹跳5次后停止-->
+<!--    </div>-->
+  </div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let mouseX = canvas.width / 2;
+let mouseY = canvas.height / 2;
+let power = 10;
+let totalBounces = 0;
+let isDragging = false;
+
+const bounceArrows = [];
+const particles = [];
+const gravity = 0.05;
+
+// 粒子效果类
+class Particle {
+  constructor(x, y, vx, vy, color, life) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.life = life;
+    this.maxLife = life;
+    this.size = Math.random() * 3 + 1;
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.1;
+    this.life--;
+    this.vx *= 0.99;
+    this.vy *= 0.99;
+  }
+
+  draw() {
+    const alpha = this.life / this.maxLife;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+class Cannon {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.angle = 0;
+  }
+
+  updateAngle(mx, my) {
+    this.angle = Math.atan2(my - this.y, mx - this.x);
+  }
+
+  draw() {
+    // 绘制炮台基座
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 30, 0, Math.PI * 2);
+    ctx.fillStyle = "#2c3e50";
+    ctx.fill();
+    ctx.strokeStyle = "#34495e";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 绘制炮管
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+    // 炮管主体
+    ctx.fillStyle = "#34495e";
+    ctx.fillRect(0, -12, 70, 24);
+
+    // 炮管装饰
+    ctx.fillStyle = "#2c3e50";
+    ctx.fillRect(0, -8, 70, 16);
+
+    // 炮口
+    ctx.fillStyle = "#1a252f";
+    ctx.fillRect(65, -10, 8, 20);
+
+    ctx.restore();
+
+    // 绘制瞄准线
+    ctx.save();
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = "rgba(255,255,255,0.6)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + Math.cos(this.angle) * 200, this.y + Math.sin(this.angle) * 200);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+class Human {
+  constructor(x, y, vx, vy) {
+    this.radius = 15;
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.bounceCount = 0;
+    this.maxBounces = 5;
+    this.stopped = false;
+    this.rotation = 0;
+    this.trail = [];
+    this.trailMaxLength = 20;
+  }
+
+  update() {
+    if (this.stopped) return;
+
+    // 添加轨迹点
+    this.trail.push({x: this.x, y: this.y});
+    if (this.trail.length > this.trailMaxLength) {
+      this.trail.shift();
+    }
+
+    this.vy += gravity;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.rotation += 0.2;
+
+    const bounceForce = 20;
+    let bounced = false;
+    let fx = 0, fy = 0;
+
+    if (this.x - this.radius < 0) {
+      this.x = this.radius;
+      this.vx = -this.vx * 0.8;
+      fx = bounceForce; bounced = true;
+    } else if (this.x + this.radius > canvas.width) {
+      this.x = canvas.width - this.radius;
+      this.vx = -this.vx * 0.8;
+      fx = -bounceForce; bounced = true;
+    }
+
+    if (this.y + this.radius > canvas.height) {
+      this.y = canvas.height - this.radius;
+      this.vy = -this.vy * 0.8;
+      fy = -bounceForce; bounced = true;
+    }
+
+    if (this.y - this.radius < 0) {
+      this.y = this.radius;
+      this.vy = -this.vy * 0.8;
+      fy = bounceForce; bounced = true;
+    }
+
+    if (bounced) {
+      bounceArrows.push(new Arrow(this.x, this.y, fx, fy));
+      this.bounceCount++;
+      totalBounces++;
+
+      // 添加弹跳粒子效果
+      for (let i = 0; i < 10; i++) {
+        particles.push(new Particle(
+          this.x + (Math.random() - 0.5) * 20,
+          this.y + (Math.random() - 0.5) * 20,
+          (Math.random() - 0.5) * 5,
+          (Math.random() - 0.5) * 5,
+          `hsl(${Math.random() * 60 + 20}, 70%, 60%)`,
+          30
+        ));
+      }
+
+      if (this.bounceCount >= this.maxBounces) {
+        this.stopped = true;
+        this.vx = 0;
+        this.vy = 0;
+      }
+    }
+  }
+
+  draw() {
+    // 绘制轨迹
+    if (this.trail.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,0.4)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(this.trail[0].x, this.trail[0].y);
+      for (let i = 1; i < this.trail.length; i++) {
+        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const angle = this.rotation;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(angle);
+
+    // 头部（更立体）
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffd700";
+    ctx.fill();
+    ctx.strokeStyle = "#ffb300";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 简单的表情
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.arc(-5, -3, 2, 0, Math.PI * 2);
+    ctx.arc(5, -3, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(0, 3, 3, 0, Math.PI);
+    ctx.stroke();
+
+    // 身体和四肢（更粗的线条）
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+
+    // 身体
+    ctx.beginPath();
+    ctx.moveTo(0, this.radius);
+    ctx.lineTo(0, this.radius + 35);
+    ctx.stroke();
+
+    // 手臂
+    ctx.beginPath();
+    ctx.moveTo(0, this.radius + 12);
+    ctx.lineTo(-15, this.radius + 25);
+    ctx.moveTo(0, this.radius + 12);
+    ctx.lineTo(15, this.radius + 25);
+    ctx.stroke();
+
+    // 腿
+    ctx.beginPath();
+    ctx.moveTo(0, this.radius + 35);
+    ctx.lineTo(-12, this.radius + 55);
+    ctx.moveTo(0, this.radius + 35);
+    ctx.lineTo(12, this.radius + 55);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
+class Arrow {
+  constructor(x, y, fx, fy) {
+    this.x = x;
+    this.y = y;
+    this.fx = fx;
+    this.fy = fy;
+    this.life = 120;
+  }
+
+  draw() {
+    if (this.life <= 0) return;
+
+    const alpha = this.life / 120;
+    const dx = this.fx * 2;
+    const dy = this.fy * 2;
+    const endX = this.x + dx;
+    const endY = this.y + dy;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // 箭头主体
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = "#ff4757";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // 箭头头部
+    const angle = Math.atan2(dy, dx);
+    ctx.beginPath();
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(endX - 12 * Math.cos(angle - Math.PI / 6), endY - 12 * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(endX - 12 * Math.cos(angle + Math.PI / 6), endY - 12 * Math.sin(angle + Math.PI / 6));
+    ctx.closePath();
+    ctx.fillStyle = "#ff4757";
+    ctx.fill();
+
+    ctx.restore();
+    this.life--;
+  }
+}
+
+const cannon = new Cannon(100, canvas.height - 100);
+const humans = [];
+
+// 更新力度显示
+function updatePowerDisplay() {
+  const powerPercent = ((power - 5) / 20) * 100;
+  document.getElementById("powerFill").style.width = powerPercent + "%";
+  document.getElementById("powerValue").textContent = Math.round(power);
+}
+
+// 力度条拖拽功能
+const powerBar = document.getElementById("powerBar");
+const powerSlider = document.getElementById("powerSlider");
+
+powerBar.addEventListener("mousedown", (e) => {
+  isDragging = true;
+  updatePowerFromMouse(e);
+});
+
+powerBar.addEventListener("click", (e) => {
+  if (!isDragging) {
+    updatePowerFromMouse(e);
+  }
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (isDragging) {
+    updatePowerFromMouse(e);
+  }
+});
+
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+});
+
+function updatePowerFromMouse(e) {
+  const rect = powerBar.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const percent = Math.max(0, Math.min(1, x / rect.width));
+  power = 5 + percent * 20;
+  updatePowerDisplay();
+}
+
+// 鼠标移动事件
+canvas.addEventListener("mousemove", (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  cannon.updateAngle(mouseX, mouseY);
+
+  // 更新角度显示
+  const angle = cannon.angle * 180 / Math.PI;
+  document.getElementById("angleDisplay").textContent = Math.round(angle) + "°";
+});
+
+// 鼠标滚轮调节力度
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  power += e.deltaY > 0 ? -1 : 1;
+  power = Math.max(5, Math.min(25, power));
+  updatePowerDisplay();
+});
+
+// 点击发射
+canvas.addEventListener("click", () => {
+  const angle = cannon.angle;
+  const vx = Math.cos(angle) * power;
+  const vy = Math.sin(angle) * power;
+
+  humans.push(new Human(
+    cannon.x + Math.cos(angle) * 70,
+    cannon.y + Math.sin(angle) * 70,
+    vx, vy
+  ));
+
+  // 发射粒子效果
+  for (let i = 0; i < 15; i++) {
+    particles.push(new Particle(
+      cannon.x + Math.cos(angle) * 70,
+      cannon.y + Math.sin(angle) * 70,
+      vx * 0.3 + (Math.random() - 0.5) * 3,
+      vy * 0.3 + (Math.random() - 0.5) * 3,
+      `hsl(${Math.random() * 60 + 300}, 70%, 60%)`,
+      40
+    ));
+  }
+
+  document.getElementById("humanCount").textContent = humans.length;
+});
+
+// 重置按钮
+document.getElementById("resetBtn").addEventListener("click", () => {
+  humans.length = 0;
+  bounceArrows.length = 0;
+  particles.length = 0;
+  totalBounces = 0;
+  document.getElementById("humanCount").textContent = "0";
+  document.getElementById("bounceCount").textContent = "0";
+});
+
+// 清空轨迹按钮
+document.getElementById("clearBtn").addEventListener("click", () => {
+  bounceArrows.length = 0;
+  particles.length = 0;
+  humans.forEach(human => human.trail = []);
+});
+
+// 动画循环
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 绘制大炮
+  cannon.draw();
+
+  // 更新和绘制火柴人
+  for (const h of humans) {
+    h.update();
+    h.draw();
+  }
+
+  // 更新和绘制弹跳箭头
+  for (let i = bounceArrows.length - 1; i >= 0; i--) {
+    bounceArrows[i].draw();
+    if (bounceArrows[i].life <= 0) {
+      bounceArrows.splice(i, 1);
+    }
+  }
+
+  // 更新和绘制粒子
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].draw();
+    if (particles[i].life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+
+  // 更新弹跳计数
+  document.getElementById("bounceCount").textContent = totalBounces;
+
+  requestAnimationFrame(animate);
+}
+
+// 初始化力度显示
+updatePowerDisplay();
+
+animate();
+</script>
+</body>
+</html>

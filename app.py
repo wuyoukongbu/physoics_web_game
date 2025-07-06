@@ -59,17 +59,44 @@ def game(game_id):
     game = next((g for g in games if g['id'] == game_id), None)
     if not game:
         return '游戏未找到', 404
+    
     html_path = game['html_path'].lstrip('/')
+    if not os.path.exists(html_path):
+        return f'HTML文件不存在: {html_path}', 404
+    
     try:
         with open(html_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        # 替换常规路径
-        content = content.replace('./电场模拟_files/', '/static/uploads/html/电场模拟_files/')
-        content = content.replace('src="电场模拟_files/', 'src="/static/uploads/html/电场模拟_files/')
-        content = content.replace('href="电场模拟_files/', 'href="/static/uploads/html/电场模拟_files/')
-        # 替换裸文件名（如 src="1.png"、src="p5.min.js" 等）
-        content = re.sub(r'src="([a-zA-Z0-9_\-]+\.(png|jpg|jpeg|svg|gif|js|css|html))"', r'src="/static/uploads/html/电场模拟_files/\1"', content)
-        content = re.sub(r'href="([a-zA-Z0-9_\-]+\.(css|js|svg))"', r'href="/static/uploads/html/电场模拟_files/\1"', content)
+        
+        # 获取HTML文件所在的目录
+        html_dir = os.path.dirname(html_path)
+        html_filename = os.path.basename(html_path)
+        
+        # 动态处理资源文件路径
+        # 1. 处理相对路径的资源文件
+        content = re.sub(r'src="([^"]*\.(png|jpg|jpeg|svg|gif|js|css|html))"', 
+                        lambda m: f'src="/{html_dir}/{m.group(1)}"', content)
+        content = re.sub(r'href="([^"]*\.(css|js|svg))"', 
+                        lambda m: f'href="/{html_dir}/{m.group(1)}"', content)
+        
+        # 2. 处理特定文件夹的资源（如电场模拟_files）
+        # 检查是否存在对应的资源文件夹
+        possible_resource_dirs = [
+            os.path.join(html_dir, '电场模拟_files'),
+            os.path.join(html_dir, html_filename.replace('.html', '_files')),
+            os.path.join(html_dir, 'files'),
+            os.path.join(html_dir, 'assets')
+        ]
+        
+        for resource_dir in possible_resource_dirs:
+            if os.path.exists(resource_dir):
+                dir_name = os.path.basename(resource_dir)
+                # 替换该文件夹下的资源路径
+                content = content.replace(f'./{dir_name}/', f'/{resource_dir}/')
+                content = content.replace(f'src="{dir_name}/', f'src="/{resource_dir}/')
+                content = content.replace(f'href="{dir_name}/', f'href="/{resource_dir}/')
+                break
+        
         return Response(content, mimetype='text/html')
     except Exception as e:
         return f'加载游戏失败: {e}', 500
@@ -106,17 +133,21 @@ def upload_game():
     desc = request.form['desc']
     thumbnail = request.files['thumbnail']
     html_file = request.files['html_file']
+    
     # 保存缩略图
     thumb_filename = secure_filename(thumbnail.filename)
     thumb_path = os.path.join(UPLOAD_IMG_DIR, thumb_filename)
     thumbnail.save(thumb_path)
+    
     # 保存HTML文件
     html_filename = secure_filename(html_file.filename)
     html_path = os.path.join(UPLOAD_HTML_DIR, html_filename)
     html_file.save(html_path)
+    
     # 生成新游戏ID
     games = load_games()
     new_id = (max([g['id'] for g in games]) + 1) if games else 1
+    
     # 构建新游戏信息
     game = {
         'id': new_id,
@@ -159,6 +190,26 @@ def delete_game(game_id):
     games = [g for g in games if g['id'] != game_id]
     save_games(games)
     flash('删除成功！')
+    return redirect(url_for('admin'))
+
+@app.route('/admin/edit/<int:game_id>', methods=['POST'])
+@login_required
+def edit_game(game_id):
+    name = request.form.get('name', '').strip()
+    desc = request.form.get('desc', '').strip()
+    games = load_games()
+    updated = False
+    for g in games:
+        if g['id'] == game_id:
+            g['name'] = name
+            g['desc'] = desc
+            updated = True
+            break
+    if updated:
+        save_games(games)
+        flash('修改成功！')
+    else:
+        flash('未找到该游戏')
     return redirect(url_for('admin'))
 
 if __name__ == '__main__':

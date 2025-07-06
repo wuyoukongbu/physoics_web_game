@@ -1,16 +1,30 @@
 [
   {
-    "id": 2,
-    "name": "二力合成与分解动态",
-    "desc": "利用仿真模拟，演示动态合成与分解效果",
-    "thumbnail": "/static/uploads/images/WX20250706-1141362x.png",
-    "html_path": "/static/uploads/html/html"
-  },
-  {
-    "id": 3,
+    "id": 1,
     "name": "点电荷电场线与等势面仿真",
     "desc": "通过动画，生动形象地展示等势面与电场线的特点",
     "thumbnail": "/static/uploads/images/2025-07-03_21.12.03.png",
     "html_path": "/static/uploads/html/2.51.html"
+  },
+  {
+    "id": 2,
+    "name": "人间大炮",
+    "desc": "演示弹力方向",
+    "thumbnail": "/static/uploads/images/WX20250706-1218202x.png",
+    "html_path": "/弹力方向.html"
+  },
+  {
+    "id": 3,
+    "name": "二力合成与分解动态",
+    "desc": "利用仿真模拟，演示动态合成与分解效果",
+    "thumbnail": "/static/uploads/images/WX20250706-1141362x.png",
+    "html_path": "/二力合成与分解动态.html"
+  },
+  {
+    "id": 4,
+    "name": "二力合成范围",
+    "desc": "利用三角形法则进行演示",
+    "thumbnail": "/static/uploads/images/WX20250706-1344132x.png",
+    "html_path": "/三角形法则.html"
   }
 ]
