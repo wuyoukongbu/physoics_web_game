@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>力的合成双模式仿真</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      max-width: 1000px;
+      width: 100%;
+      animation: slideIn 0.8s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      text-align: center;
+      margin-bottom: 30px;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+
+    .control-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 16px;
+      border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .mode-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mode-toggle {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .mode-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .mode-toggle:active {
+      transform: translateY(0);
+    }
+
+    .mode-label {
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 20px;
+      border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .angle-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .angle-label {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .angle-input-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .angle-input {
+      width: 80px;
+      padding: 8px 12px;
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      transition: all 0.3s ease;
+    }
+
+    .angle-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    .slider-container {
+      position: relative;
+      width: 300px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+
+    .angle-slider {
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, #e0e7ff, #c7d2fe);
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+      position: relative;
+    }
+
+    .angle-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .angle-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .angle-slider::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .slider-labels {
+      position: absolute;
+      top: 35px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .canvas-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .simulation-canvas {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(102, 126, 234, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .simulation-canvas:hover {
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .result-panel {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+      border-radius: 16px;
+      padding: 25px;
+      border: 1px solid rgba(102, 126, 234, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .result-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .result-item {
+      background: rgba(255, 255, 255, 0.8);
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .result-item h3 {
+      color: #667eea;
+      font-size: 14px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .result-item .value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .result-item .unit {
+      font-size: 14px;
+      color: #666;
+      margin-left: 4px;
+    }
+
+    .warning-message {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid #fbbf24;
+      font-weight: 600;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 20px;
+      border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    .legend-force {
+      background: #ef4444;
+    }
+
+    .legend-resultant {
+      background: #22c55e;
+    }
+
+    .legend-construction {
+      background: #94a3b8;
+      border: 2px dashed #94a3b8;
+      height: 2px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .control-panel {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .slider-container {
+        width: 250px;
+      }
+
+      .simulation-canvas {
+        width: 100%;
+        max-width: 700px;
+      }
+
+      .result-content {
+        grid-template-columns: 1fr;
+      }
+
+      .legend {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 力的合成仿真游戏</h1>
+
+    <div class="control-panel">
+      <div class="mode-section">
+        <button id="modeToggle" class="mode-toggle">🔄 切换为合力固定模式</button>
+        <div id="modeLabel" class="mode-label">当前：分力固定模式</div>
+      </div>
+
+      <div class="angle-section">
+        <div class="angle-label">夹角设置</div>
+        <div class="angle-input-container">
+          <input type="number" id="angleInput" class="angle-input" min="0" max="180" value="60" />
+          <span>°</span>
+        </div>
+        <div class="slider-container">
+          <input type="range" id="angle" class="angle-slider" min="0" max="180" value="60" />
+          <div class="slider-labels">
+            <span>0°</span>
+            <span>90°</span>
+            <span>180°</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-container">
+      <canvas id="simulation" class="simulation-canvas" width="800" height="500"></canvas>
+    </div>
+
+    <div class="result-panel">
+      <div id="resultContent" class="result-content"></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color legend-force"></div>
+        <span>分力</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color legend-resultant"></div>
+        <span>合力</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color legend-construction"></div>
+        <span>辅助线</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("simulation");
+    const ctx = canvas.getContext("2d");
+    const angleSlider = document.getElementById("angle");
+    const angleInput = document.getElementById("angleInput");
+    const resultContent = document.getElementById("resultContent");
+    const modeToggle = document.getElementById("modeToggle");
+    const modeLabel = document.getElementById("modeLabel");
+
+    const originX = 180;
+    const originY = canvas.height / 2;
+    const pixelPerN = 5;
+
+    let mode = "A"; // A = 分力固定，B = 合力固定
+    const fixedForce = 50; // N, 模式A 分力固定
+    const fixedResultant = 80; // N, 模式B 合力固定
+
+    function drawArrow(x, y, dx, dy, color, label, isResultant = false) {
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+
+      // 绘制箭头主体
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + dx, y + dy);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isResultant ? 6 : 4;
+      ctx.lineCap = 'round';
+      ctx.setLineDash([]);
+
+      // 为合力添加特殊效果
+      if (isResultant) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // 绘制箭头头部
+      const headLength = isResultant ? 18 : 15;
+      const headAngle = Math.PI / 6;
+
+      ctx.beginPath();
+      ctx.moveTo(x + dx, y + dy);
+      ctx.lineTo(
+        x + dx - headLength * Math.cos(angle - headAngle),
+        y + dy - headLength * Math.sin(angle - headAngle)
+      );
+      ctx.lineTo(
+        x + dx - headLength * Math.cos(angle + headAngle),
+        y + dy - headLength * Math.sin(angle + headAngle)
+      );
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // 绘制标签
+      const labelX = x + dx * 0.5;
+      const labelY = y + dy * 0.5;
+
+      // 计算标签位置偏移
+      const offsetDistance = isResultant ? 25 : 20;
+      const perpAngle = angle + Math.PI / 2;
+      const labelOffsetX = Math.cos(perpAngle) * offsetDistance;
+      const labelOffsetY = Math.sin(perpAngle) * offsetDistance;
+
+      // 调整标签位置避免重叠
+      let finalLabelX = labelX + labelOffsetX;
+      let finalLabelY = labelY + labelOffsetY;
+
+      // 如果标签在画布边界外，调整到另一侧
+      if (finalLabelX < 0 || finalLabelX > canvas.width - 80) {
+        finalLabelX = labelX - labelOffsetX;
+      }
+      if (finalLabelY < 20 || finalLabelY > canvas.height - 20) {
+        finalLabelY = labelY - labelOffsetY;
+      }
+
+      // 绘制标签背景
+      ctx.font = `bold ${isResultant ? 16 : 14}px Arial`;
+      const textMetrics = ctx.measureText(label);
+      const textWidth = textMetrics.width;
+      const textHeight = isResultant ? 16 : 14;
+
+      const padding = 6;
+      const bgX = finalLabelX - textWidth / 2 - padding;
+      const bgY = finalLabelY - textHeight / 2 - padding;
+      const bgWidth = textWidth + padding * 2;
+      const bgHeight = textHeight + padding * 2;
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.beginPath();
+      ctx.roundRect(bgX, bgY, bgWidth, bgHeight, 6);
+      ctx.fill();
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 绘制文本
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, finalLabelX, finalLabelY);
+    }
+
+    function drawDashedLine(x1, y1, x2, y2, color) {
+      ctx.beginPath();
+      ctx.setLineDash([6, 6]);
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.6;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    function drawOrigin() {
+      // 绘制原点
+      ctx.beginPath();
+      ctx.arc(originX, originY, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = '#333';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 绘制坐标轴
+      ctx.beginPath();
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 1;
+      // X轴
+      ctx.moveTo(20, originY);
+      ctx.lineTo(canvas.width - 20, originY);
+      // Y轴
+      ctx.moveTo(originX, 20);
+      ctx.lineTo(originX, canvas.height - 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function update() {
+      const angleDeg = parseFloat(angleSlider.value);
+      const angleRad = angleDeg * Math.PI / 180;
+
+      // 同步输入框和滑块
+      angleInput.value = angleDeg;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let F, dx1, dy1, dx2, dy2, fx, fy, R;
+
+      if (mode === "A") {
+        // 模式A：分力固定，合力变化
+        F = fixedForce;
+        dx1 = Math.cos(-angleRad / 2) * F * pixelPerN;
+        dy1 = Math.sin(-angleRad / 2) * F * pixelPerN;
+        dx2 = Math.cos(angleRad / 2) * F * pixelPerN;
+        dy2 = Math.sin(angleRad / 2) * F * pixelPerN;
+        fx = dx1 + dx2;
+        fy = dy1 + dy2;
+        R = Math.sqrt(fx * fx + fy * fy);
+      } else {
+        // 模式B：合力固定，分力变化
+        if (Math.abs(Math.cos(angleRad / 2)) < 0.01) {
+          F = Infinity;
+        } else {
+          F = fixedResultant / (2 * Math.cos(angleRad / 2));
+        }
+        if (F > 200 || !isFinite(F)) {
+          resultContent.innerHTML = '<div class="warning-message">⚠️ 当前角度下分力将趋近无穷，无法显示</div>';
+          return;
+        }
+        dx1 = Math.cos(-angleRad / 2) * F * pixelPerN;
+        dy1 = Math.sin(-angleRad / 2) * F * pixelPerN;
+        dx2 = Math.cos(angleRad / 2) * F * pixelPerN;
+        dy2 = Math.sin(angleRad / 2) * F * pixelPerN;
+        fx = dx1 + dx2;
+        fy = dy1 + dy2;
+        R = fixedResultant * pixelPerN;
+      }
+
+      // 绘制坐标系和原点
+      drawOrigin();
+
+      // 绘制平行四边形的辅助线
+      drawDashedLine(originX + dx1, originY + dy1, originX + fx, originY + fy, "#94a3b8");
+      drawDashedLine(originX + dx2, originY + dy2, originX + fx, originY + fy, "#94a3b8");
+
+      // 画两个分力（红色）
+      drawArrow(originX, originY, dx1, dy1, "#ef4444", `F₁ = ${F.toFixed(1)}N`);
+      drawArrow(originX, originY, dx2, dy2, "#ef4444", `F₂ = ${F.toFixed(1)}N`);
+
+      // 合力（绿色，更突出）
+      drawArrow(originX, originY, fx, fy, "#22c55e", `R = ${(R / pixelPerN).toFixed(1)}N`, true);
+
+      // 绘制角度弧线
+      drawAngleArc(originX, originY, dx1, dy1, dx2, dy2, angleDeg);
+
+      // 更新结果面板
+      resultContent.innerHTML = `
+        <div class="result-item">
+          <h3>当前模式</h3>
+          <div class="value">${mode === "A" ? "分力固定" : "合力固定"}</div>
+        </div>
+        <div class="result-item">
+          <h3>分力大小</h3>
+          <div class="value">${F.toFixed(1)}<span class="unit">N</span></div>
+        </div>
+        <div class="result-item">
+          <h3>合力大小</h3>
+          <div class="value">${(R / pixelPerN).toFixed(1)}<span class="unit">N</span></div>
+        </div>
+        <div class="result-item">
+          <h3>夹角</h3>
+          <div class="value">${angleDeg}<span class="unit">°</span></div>
+        </div>
+      `;
+    }
+
+    function drawAngleArc(x, y, dx1, dy1, dx2, dy2, angleDeg) {
+      const radius = 40;
+      const angle1 = Math.atan2(dy1, dx1);
+      const angle2 = Math.atan2(dy2, dx2);
+
+      ctx.beginPath();
+      ctx.arc(x, y, radius, angle1, angle2, false);
+      ctx.strokeStyle = '#667eea';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 绘制角度标识
+      const midAngle = (angle1 + angle2) / 2;
+      const labelX = x + Math.cos(midAngle) * (radius + 15);
+      const labelY = y + Math.sin(midAngle) * (radius + 15);
+
+      ctx.font = 'bold 14px Arial';
+      ctx.fillStyle = '#667eea';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${angleDeg}°`, labelX, labelY);
+    }
+
+    angleSlider.addEventListener("input", update);
+
+    // 输入框事件监听
+    angleInput.addEventListener("input", (e) => {
+      let value = parseFloat(e.target.value);
+      if (isNaN(value)) return;
+
+      // 限制范围
+      value = Math.max(0, Math.min(180, value));
+      angleSlider.value = value;
+      update();
+    });
+
+    angleInput.addEventListener("blur", (e) => {
+      let value = parseFloat(e.target.value);
+      if (isNaN(value)) {
+        e.target.value = angleSlider.value;
+        return;
+      }
+      value = Math.max(0, Math.min(180, value));
+      e.target.value = value;
+      angleSlider.value = value;
+      update();
+    });
+
+    modeToggle.addEventListener("click", () => {
+      if (mode === "A") {
+        mode = "B";
+        modeLabel.textContent = "当前：合力固定模式";
+        modeToggle.textContent = "🔄 切换为分力固定模式";
+      } else {
+        mode = "A";
+        modeLabel.textContent = "当前：分力固定模式";
+        modeToggle.textContent = "🔄 切换为合力固定模式";
+      }
+      update();
+    });
+
+    // 添加键盘支持
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") {
+        let newValue = Math.max(0, parseInt(angleSlider.value) - 1);
+        angleSlider.value = newValue;
+        angleInput.value = newValue;
+        update();
+      } else if (e.key === "ArrowRight") {
+        let newValue = Math.min(180, parseInt(angleSlider.value) + 1);
+        angleSlider.value = newValue;
+        angleInput.value = newValue;
+        update();
+      } else if (e.key === " ") {
+        e.preventDefault();
+        modeToggle.click();
+      }
+    });
+
+    // 初始化
+    update();
+  </script>
+</body>
+</html>
