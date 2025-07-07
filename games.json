@@ -26,5 +26,12 @@
     "desc": "利用三角形法则进行演示",
     "thumbnail": "/static/uploads/images/WX20250706-1344132x.png",
     "html_path": "/三角形法则.html"
+  },
+  {
+    "id": 5,
+    "name": "整体法",
+    "desc": "整体法",
+    "thumbnail": "/static/uploads/images/2025-07-07_21.17.43.png",
+    "html_path": "/static/uploads/html/html"
   }
 ]
